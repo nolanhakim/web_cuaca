@@ -18,12 +18,37 @@ import {
 } from "react-icons/fa";
 import { WiHumidity, WiBarometer } from "react-icons/wi";
 
+interface WeatherData {
+  id: number;
+  name: string;
+  sys: {
+    country: string;
+  };
+  dt: number;
+  timezone: number;
+  weather: Array<{
+    main: string;
+    description: string;
+  }>;
+  main: {
+    temp: number;
+    feels_like: number;
+    temp_min: number;
+    temp_max: number;
+    humidity: number;
+    pressure: number;
+  };
+  wind: {
+    speed: number;
+  };
+}
+
 const RealTimeClock = ({ timezoneOffset }: { timezoneOffset: number }) => {
   const [currentTime, setCurrentTime] = useState<Date>(() => {
     const now = new Date();
-    const localOffset = now.getTimezoneOffset() * 60; // in seconds
-    const targetOffset = timezoneOffset; // in seconds from API
-    const totalOffset = (localOffset + targetOffset) * 1000; // in milliseconds
+    const localOffset = now.getTimezoneOffset() * 60;
+    const targetOffset = timezoneOffset;
+    const totalOffset = (localOffset + targetOffset) * 1000;
     return new Date(now.getTime() + totalOffset);
   });
 
@@ -52,7 +77,7 @@ const RealTimeClock = ({ timezoneOffset }: { timezoneOffset: number }) => {
 
 export default function Home() {
   const [city, setCity] = useState("");
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -71,10 +96,14 @@ export default function Home() {
         throw new Error("City not found. Please try another location.");
       }
 
-      const data = await res.json();
+      const data: WeatherData = await res.json();
       setWeather(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
       setWeather(null);
     } finally {
       setIsLoading(false);
